@@ -28,6 +28,7 @@ class ZenHintsConfig
 	// Config data
 	string CfgVersion;
 	bool ReplaceVanillaInsteadOfMerge;
+	int IngameChatHintsTimerSecs;
 	ref array<ref HintPage> Hints;
 
 	void Load()
@@ -58,7 +59,11 @@ class ZenHintsConfig
 			JsonFileLoader<ZenHintsConfig>.JsonLoadFile(filePath, this);	
 			Print("[ZenHints] Successfully loaded config. Version: " + CfgVersion);
 			STATIC_VERSION = CfgVersion;
-			return;
+			//return;
+		}
+		else 
+		{
+			Print("[ZenHints] Config file does not exist, creating a new one...");
 		}
 
 		Save();
@@ -77,6 +82,8 @@ class ZenHintsConfig
 		exampleHint.ZenSetDescriptionText("Example hint description.");
 		
 		Hints.Insert(exampleHint);
+		
+		IngameChatHintsTimerSecs = 0; // 1800 = 30 minutes etc
 	}
 	
 	void CheckSingleEntry()

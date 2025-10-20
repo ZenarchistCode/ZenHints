@@ -4,6 +4,11 @@ modded class MissionServer
 	{
 		super.OnInit();
 
+		#ifdef ZENMODPACK 
+		if (!ZenModEnabled("ZenHints"))
+			return;
+		#endif
+		
 		Print("[ZenHints] MissionServer::OnInit");
 
 		// Load server-side config 
