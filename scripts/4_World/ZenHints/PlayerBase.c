@@ -15,7 +15,7 @@ modded class PlayerBase
 		{
 			// The hints will only update after player logs in to the server at least once since last version change
 			GetRPCManager().SendRPC("ZenMod_RPC", "RPC_ServerReceive_ZenHintsConfigVersion", new Param1<ref string>(ZenHintsConfig.STATIC_VERSION), true, null);
-			Print("[ZenSkills] Sending hints version to server for cross-check: " + ZenHintsConfig.STATIC_VERSION);
+			Print("[ZenHints] Sending hints version to server for cross-check: " + ZenHintsConfig.STATIC_VERSION);
 			
 			if (GetZenHintsConfig().IngameChatHintsTimerSecs > 0 && (!m_ZenHintsTimer || !m_ZenHintsTimer.IsRunning()))
 			{
