@@ -6,15 +6,15 @@ modded class PlayerBase
 	{
 		super.OnPlayerLoaded();
 		
-		#ifdef ZENMODPACK 
+		#ifdef ZenModPack 
 		if (!ZenModEnabled("ZenHints"))
 			return;
 		#endif
 		
-		if (GetGame().IsClient() && IsControlledPlayer())
+		if (g_Game.IsClient() && IsControlledPlayer())
 		{
 			// The hints will only update after player logs in to the server at least once since last version change
-			GetRPCManager().SendRPC("ZenMod_RPC", "RPC_ServerReceive_ZenHintsConfigVersion", new Param1<ref string>(ZenHintsConfig.STATIC_VERSION), true, null);
+			GetZenConfigRegister().RequestConfigIfOutdated(ZenHintsConfig);
 			Print("[ZenHints] Sending hints version to server for cross-check: " + ZenHintsConfig.STATIC_VERSION);
 			
 			if (GetZenHintsConfig().IngameChatHintsTimerSecs > 0 && (!m_ZenHintsTimer || !m_ZenHintsTimer.IsRunning()))
@@ -116,6 +116,6 @@ modded class PlayerBase
 	
 	static void ZenHintsChat(string msg)
 	{
-		GetGame().GetMission().OnEvent(ChatMessageEventTypeID, new ChatMessageEventParams(CCSystem, "", msg, ""));
+		if (g_Game) g_Game.GetMission().OnEvent(ChatMessageEventTypeID, new ChatMessageEventParams(CCSystem, "", msg, ""));
 	}
 }

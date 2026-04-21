@@ -1,78 +1,58 @@
-modded class HintPage 
+ref ZenHintsConfig g_ZenHintsConfig;
+
+static ZenHintsConfig GetZenHintsConfig()
 {
-	void ZenSetHeadlineText(string s)
+	if (!g_ZenHintsConfig) GetZenConfigRegister().RegisterConfig(ZenHintsConfig);
+	return g_ZenHintsConfig;
+}
+
+modded class ZenConfigRegister
+{
+	override void RegisterPreload()
 	{
-		m_Headline = s;
-	}
-	
-	void ZenSetDescriptionText(string s)
-	{
-		m_Description = s;
-	}
-	
-	void ZenSetImagePath(string s)
-	{
-		m_ImagePath = s;
+		super.RegisterPreload(); 
+		RegisterType(ZenHintsConfig);
 	}
 }
 
-class ZenHintsConfig
+class ZenHintsConfig: ZenConfigBase
 {
-	static const string INIT_VERSION 			= "Edit this text to force client re-sync";
+	override void OnRegistered()
+	{
+		g_ZenHintsConfig = this;
+	}
+	
+	[NonSerialized()]
+	static const string INIT_VERSION = "Edit this text to force client re-sync";
+	
+	[NonSerialized()]
+	static string STATIC_VERSION;
 	
 	// Config location
-	private const static string ModFolder		= "$profile:\\Zenarchist\\";
-	private const static string ConfigName		= "ZenHintsConfig.json";
-	static string STATIC_VERSION;
+	override string    		GetCurrentVersion()   		{ return "1.29.1"; }
+	override bool			ShouldLoadOnServer() 		
+	{
+		#ifdef ZenModPack
+		if (!ZenModEnabled("ZenHints"))
+			return false;
+		#endif
+		
+		return true; 
+	}
+	override bool			ShouldLoadOnClient() 		{ return true; }
+	override bool			ShouldSyncToClient()		{ return true; }
+	override string 		GetSyncVersion() 			{ return SyncVersion; }
 
 	// Config data
-	string CfgVersion;
+	string SyncVersion;
 	bool ReplaceVanillaInsteadOfMerge;
 	int IngameChatHintsTimerSecs;
 	ref array<ref HintPage> Hints;
 
-	void Load()
+	override void SetDefaults()
 	{
-		SetDefaultValues();
-		
-		string serverIP = "";
-		
-		#ifndef SERVER
-		GetCLIParam("connect", serverIP);
-		serverIP.Replace(":", "");
-		serverIP.Replace(".", "");
-		
-		if (serverIP == "")
-		{
-			Error("SERVER IP UNAVAILABLE!");
-			return;
-		}
-		#endif
-		
-		string filePath = ModFolder + serverIP + "\\" + ConfigName;
-		
-		Print("[ZenHints] Loading config file for server IP: " + filePath);
-
-		if (FileExist(filePath))
-		{ 
-			// If config exists, load file
-			JsonFileLoader<ZenHintsConfig>.JsonLoadFile(filePath, this);	
-			Print("[ZenHints] Successfully loaded config. Version: " + CfgVersion);
-			STATIC_VERSION = CfgVersion;
-			//return;
-		}
-		else 
-		{
-			Print("[ZenHints] Config file does not exist, creating a new one...");
-		}
-
-		Save();
-	}
-
-	void SetDefaultValues()
-	{
-		CfgVersion = INIT_VERSION;
-		STATIC_VERSION = CfgVersion;
+		SyncVersion = INIT_VERSION;
+		STATIC_VERSION = SyncVersion;
 		
 		ReplaceVanillaInsteadOfMerge = false;
 		Hints = new array<ref HintPage>;
@@ -109,45 +89,37 @@ class ZenHintsConfig
 			Print("[ZenHints] Only one hint was found - duplicated it to avoid hang on load. Count=" + Hints.Count());
 		}
 	}
-
-	void Save()
+	
+	override bool ReadJson(string path, out string err)
 	{
-		if (!FileExist(ModFolder))
-		{
-			MakeDirectory(ModFolder);
-		}
-
-		string serverIP = "";
-		
-		#ifndef SERVER
-		GetCLIParam("connect", serverIP);
-		serverIP.Replace(":", "");
-		serverIP.Replace(".", "");
-		#endif
-		
-		string filePath = ModFolder + serverIP + "\\" + ConfigName;
-		
-		#ifndef SERVER
-		if (!FileExist(ModFolder + serverIP))
-		{
-			MakeDirectory(ModFolder + serverIP);
-		}
-		#endif
-
-		JsonFileLoader<ZenHintsConfig>.JsonSaveFile(filePath, this);
-	}
-}
-
-static ZenHintsConfig GetZenHintsConfig()
-{
-	if (!m_ZenHintsConfig)
-	{
-		Print("[ZenHintsConfig] Init");
-		m_ZenHintsConfig = new ZenHintsConfig();
-		m_ZenHintsConfig.Load();
+		return JsonFileLoader<ZenHintsConfig>.LoadFile(path, this, err);
 	}
 
-	return m_ZenHintsConfig;
+	override bool WriteJson(string path, out string err)
+	{
+		return JsonFileLoader<ZenHintsConfig>.SaveFile(path, this, err);
+	}
+	
+	override bool BuildSyncPayload(out string payload, out string err)
+	{
+		return JsonFileLoader<ZenHintsConfig>.MakeData(this, payload, err, false);
+	}
+	
+	override bool ApplySyncPayload(string payload, out string err)
+	{
+		return JsonFileLoader<ZenHintsConfig>.LoadData(payload, this, err);
+	}
+	
+	override void AfterLoad()
+	{
+		super.AfterLoad();
+		
+		STATIC_VERSION = SyncVersion;
+		CheckSingleEntry();
+		
+		foreach (HintPage hint : Hints)
+		{
+			hint.SetIsZenHint(true);
+		}
+	}
 }
-
-ref ZenHintsConfig m_ZenHintsConfig;

@@ -2,13 +2,7 @@ modded class MissionBase
 {
 	void MissionBase()
 	{
-		#ifdef SERVER
-		// SERVER RECEIVE RPCs
-		GetRPCManager().AddRPC("ZenMod_RPC", "RPC_ServerReceive_ZenHintsConfigVersion", this, SingeplayerExecutionType.Server);
-        #else
-		// CLIENT RECEIVE RPCs
-        GetRPCManager().AddRPC("ZenMod_RPC", "RPC_ClientReceive_ZenHintsConfig", this, SingeplayerExecutionType.Client);
-		#endif
+		// add rpcs (removed til we figure out new sync behaviour)
 	}
 	
 	// Server -> client
@@ -21,14 +15,14 @@ modded class MissionBase
             return;
         }
 		
-		string oldVersion = GetZenHintsConfig().CfgVersion;
+		string oldVersion = GetZenHintsConfig().SyncVersion;
 
         GetZenHintsConfig().Hints.Clear();
 
-		GetZenHintsConfig().CfgVersion = data.param1.CfgVersion;
+		GetZenHintsConfig().SyncVersion = data.param1.SyncVersion;
 		GetZenHintsConfig().ReplaceVanillaInsteadOfMerge = data.param1.ReplaceVanillaInsteadOfMerge;
 		GetZenHintsConfig().IngameChatHintsTimerSecs = data.param1.IngameChatHintsTimerSecs;
-		ZenHintsConfig.STATIC_VERSION = GetZenHintsConfig().CfgVersion;
+		ZenHintsConfig.STATIC_VERSION = GetZenHintsConfig().SyncVersion;
 		
 		foreach (HintPage hp : data.param1.Hints)
 		{
@@ -49,7 +43,7 @@ modded class MissionBase
             return;
         }
 		
-		string serverVersion = GetZenHintsConfig().CfgVersion;
+		string serverVersion = GetZenHintsConfig().SyncVersion;
 		string clientVersion = data.param1;
 		
 		if (clientVersion != serverVersion)
