@@ -30,15 +30,7 @@ class ZenHintsConfig: ZenConfigBase
 	
 	// Config location
 	override string    		GetCurrentVersion()   		{ return "1.29.1"; }
-	override bool			ShouldLoadOnServer() 		
-	{
-		#ifdef ZenModPack
-		if (!ZenModEnabled("ZenHints"))
-			return false;
-		#endif
-		
-		return true; 
-	}
+	override bool			ShouldLoadOnServer() 		{ return true; }
 	override bool			ShouldLoadOnClient() 		{ return true; }
 	override bool			ShouldSyncToClient()		{ return true; }
 	override string 		GetSyncVersion() 			{ return SyncVersion; }

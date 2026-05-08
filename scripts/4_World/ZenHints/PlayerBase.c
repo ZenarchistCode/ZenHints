@@ -2,9 +2,9 @@ modded class PlayerBase
 {
 	protected ref Timer m_ZenHintsTimer;
 	
-	override void OnPlayerLoaded()
+	override void Zen_OnPlayerLoadedClientPlayer()
 	{
-		super.OnPlayerLoaded();
+		super.Zen_OnPlayerLoadedClientPlayer();
 		
 		#ifdef ZenModPack 
 		if (!ZenModEnabled("ZenHints"))
@@ -13,10 +13,6 @@ modded class PlayerBase
 		
 		if (g_Game.IsClient() && IsControlledPlayer())
 		{
-			// The hints will only update after player logs in to the server at least once since last version change
-			GetZenConfigRegister().RequestConfigIfOutdated(ZenHintsConfig);
-			Print("[ZenHints] Sending hints version to server for cross-check: " + ZenHintsConfig.STATIC_VERSION);
-			
 			if (GetZenHintsConfig().IngameChatHintsTimerSecs > 0 && (!m_ZenHintsTimer || !m_ZenHintsTimer.IsRunning()))
 			{
 				m_ZenHintsTimer = new Timer(CALL_CATEGORY_SYSTEM);
@@ -25,9 +21,9 @@ modded class PlayerBase
 		}
 	}
 	
-	override void OnDisconnect()
+	override void Zen_OnDisconnectClientPlayer()
 	{
-		super.OnDisconnect();
+		super.Zen_OnDisconnectClientPlayer();
 		
 		if (m_ZenHintsTimer)
 			m_ZenHintsTimer.Stop();

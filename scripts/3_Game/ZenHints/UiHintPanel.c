@@ -100,6 +100,7 @@ modded class UiHintPanel
 		if (imagePath != string.Empty)
 		{
 			m_ZenHintIcon.LoadImageFile(0, imagePath);
+			m_ZenHintIcon.SetFlags(WidgetFlags.STRETCH, true);
 			return;
 		}
 
