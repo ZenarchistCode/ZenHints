@@ -1,3 +1,43 @@
+class ZenHintsLoadingIconHelper
+{
+	static float GetScaledHintIconSize()
+	{
+		int screenWidth;
+		int screenHeight;
+
+		GetScreenSize(screenWidth, screenHeight);
+
+		float iconSize = 48.0 * (screenHeight / 1080.0);
+
+		if (iconSize < 48.0)
+		{
+			iconSize = 48.0;
+		}
+
+		if (iconSize > 72.0)
+		{
+			iconSize = 72.0;
+		}
+
+		return iconSize;
+	}
+
+	static void ApplyIconLayout(ImageWidget iconWidget)
+	{
+		if (!iconWidget)
+		{
+			return;
+		}
+
+		float iconSize = GetScaledHintIconSize();
+
+		iconWidget.SetPos(0.0, 0.17);
+		iconWidget.SetSize(iconSize, iconSize);
+		iconWidget.SetFlags(WidgetFlags.STRETCH, true);
+		iconWidget.Show(true);
+	}
+}
+
 modded class UiHintPanel
 {
 	protected ImageWidget m_ZenHintIcon;
@@ -21,19 +61,28 @@ modded class UiHintPanel
 			{
 				m_ContentList.Insert(hintPage);
 			}
-			
-			//Print("[ZenHints] Loaded custom hints. Total hints in array: " + m_ContentList.Count() + "/" + GetZenHintsConfig().Hints.Count());
 		}
 	}
 
 	void SetZenLoadingScreenContext(ImageWidget iconWidget, Widget rootWidget)
 	{
+		if (!iconWidget)
+		{
+			return;
+		}
+
+		if (!rootWidget)
+		{
+			return;
+		}
+
 		m_ZenHintIcon = iconWidget;
 		m_ZenHintRootWidget = rootWidget;
 		m_ZenIsLoadingScreenContext = true;
 
+		ApplyZenHintIconLayout();
 		HideVanillaHintImageForLoadingScreen();
-		SetHintImage();
+		ZenSetHintImage();
 	}
 
 	void ClearZenLoadingScreenContext()
@@ -66,17 +115,27 @@ modded class UiHintPanel
 		}
 
 		ImageWidget vanillaHintImage = ImageWidget.Cast(m_ZenHintRootWidget.FindAnyWidget("HintImage"));
-		if (!vanillaHintImage)
+
+		if (vanillaHintImage && vanillaHintImage != m_ZenHintIcon)
+		{
+			vanillaHintImage.Show(false);
+		}
+	}
+
+	protected void ApplyZenHintIconLayout()
+	{
+		if (!m_ZenHintIcon)
 		{
 			return;
 		}
 
-		vanillaHintImage.Show(false);
+		ZenHintsLoadingIconHelper.ApplyIconLayout(m_ZenHintIcon);
 	}
 
-	override protected void SetHintImage()
+	protected void ZenSetHintImage()
 	{
 		HintPage currentHint = m_ContentList.Get(m_PageIndex);
+
 		if (!currentHint)
 		{
 			return;
@@ -84,10 +143,10 @@ modded class UiHintPanel
 
 		if (!IsZenLoadingScreenContext())
 		{
-			super.SetHintImage();
 			return;
 		}
 
+		ApplyZenHintIconLayout();
 		HideVanillaHintImageForLoadingScreen();
 
 		if (!currentHint.IsZenHint())
@@ -97,14 +156,26 @@ modded class UiHintPanel
 		}
 
 		string imagePath = currentHint.GetImagePath();
+
 		if (imagePath != string.Empty)
 		{
 			m_ZenHintIcon.LoadImageFile(0, imagePath);
-			m_ZenHintIcon.SetFlags(WidgetFlags.STRETCH, true);
+			ApplyZenHintIconLayout();
 			return;
 		}
 
 		ResetZenImageIcon();
+	}
+
+	override protected void SetHintImage()
+	{
+		if (IsZenLoadingScreenContext())
+		{
+			ZenSetHintImage();
+			return;
+		}
+
+		super.SetHintImage();
 	}
 
 	void ResetZenImageIcon()
@@ -115,6 +186,21 @@ modded class UiHintPanel
 		}
 
 		m_ZenHintIcon.LoadImageFile(0, "set:dayz_gui image:loading_screen_bulb");
+		ApplyZenHintIconLayout();
+	}
+}
+
+modded class UiHintPanelLoading
+{
+	override protected void SetHintImage()
+	{
+		if (IsZenLoadingScreenContext())
+		{
+			ZenSetHintImage();
+			return;
+		}
+
+		super.SetHintImage();
 	}
 }
 
@@ -150,15 +236,55 @@ modded class LoginTimeBase
 
 modded class LoginQueueBase
 {
-	override void Show()
+	protected bool m_ZenHintContextApplied;
+
+	override Widget Init()
 	{
-		super.Show();
+		Widget rootWidget = super.Init();
+
+		ZenApplyQueueHintContext();
+
+		return rootWidget;
+	}
+
+	override void SetPosition(int position)
+	{
+		super.SetPosition(position);
+
+		if (!m_ZenHintContextApplied)
+		{
+			ZenApplyQueueHintContext();
+		}
+	}
+
+	protected void ZenApplyQueueHintContext()
+	{
+		if (!layoutRoot)
+		{
+			Print("[ZenHints] LoginQueueBase layoutRoot is null.");
+			return;
+		}
+
+		if (!m_HintPanel)
+		{
+			Print("[ZenHints] LoginQueueBase m_HintPanel is null.");
+			return;
+		}
 
 		ImageWidget iconWidget = ImageWidget.Cast(layoutRoot.FindAnyWidget("hintIcon"));
 
-		if (m_HintPanel)
+		if (!iconWidget)
 		{
-			m_HintPanel.SetZenLoadingScreenContext(iconWidget, layoutRoot);
+			Print("[ZenHints] LoginQueueBase root hintIcon not found.");
+			return;
 		}
+
+		ZenHintsLoadingIconHelper.ApplyIconLayout(iconWidget);
+
+		m_HintPanel.SetZenLoadingScreenContext(iconWidget, layoutRoot);
+
+		ZenHintsLoadingIconHelper.ApplyIconLayout(iconWidget);
+
+		m_ZenHintContextApplied = true;
 	}
 }
